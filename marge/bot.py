@@ -31,6 +31,10 @@ class Bot(object):
             )
 
     def start(self):
+        gitlab_version = self._api.version()
+        if not gitlab_version.is_ee:
+            log.fatal("Sorry, but this marge-bot only works with Gitlab EE. Your version is: %s", gitlab_version.edition)
+            exit(1)
         with TemporaryDirectory() as root_dir:
             repo_manager = store.RepoManager(
                 user=self.user,

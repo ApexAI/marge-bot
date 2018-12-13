@@ -223,4 +223,4 @@ class Version(namedtuple('Version', 'release edition')):
 
     @property
     def is_ee(self):
-        return self.edition == 'ee'
+        return 'ee' in self.edition
