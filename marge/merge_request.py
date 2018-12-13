@@ -1,4 +1,5 @@
 from . import gitlab
+import logging as log
 from .approvals import Approvals
 
 
@@ -6,7 +7,10 @@ GET, POST, PUT, DELETE = gitlab.GET, gitlab.POST, gitlab.PUT, gitlab.DELETE
 
 
 class MergeRequest(gitlab.Resource):
-
+    """
+    Object of a single merge request.
+    This object is empty upon creation. `refetch_info` must be called to get info from api. 
+    """
     @classmethod
     def create(cls, api, project_id, params):
         merge_request_info = api.call(POST(
@@ -101,6 +105,10 @@ class MergeRequest(gitlab.Resource):
         return self.info['work_in_progress']
 
     @property
+    def approvals(self):
+        return self._approvals
+
+    @property
     def approved_by(self):
         return self.info['approved_by']
 
@@ -110,6 +118,9 @@ class MergeRequest(gitlab.Resource):
 
     def refetch_info(self):
         self._info = self._api.call(GET('/projects/{0.project_id}/merge_requests/{0.iid}'.format(self)))
+        if not hasattr(self, '_approvals'):
+            self._approvals = Approvals(self.api, {'id': self.id, 'iid': self.iid, 'project_id': self.project_id})
+        self._approvals.refetch_info()
 
     def comment(self, message):
         if self._api.version().release >= (9, 2, 2):
@@ -147,11 +158,13 @@ class MergeRequest(gitlab.Resource):
         return self.assign_to(None)
 
     def fetch_approvals(self):
+        """This function should be deprecated."""
         # 'id' needed for for GitLab 9.2.2 hack (see Approvals.refetch_info())
+        log.warn("`fetch_approvals` has deprecated.")
         info = {'id': self.id, 'iid': self.iid, 'project_id': self.project_id}
-        approvals = Approvals(self.api, info)
-        approvals.refetch_info()
-        return approvals
+        self._approvals = Approvals(self.api, info)
+        self._approvals.refetch_info()
+        return self._approvals
 
     def fetch_commits(self):
         return self._api.call(GET('/projects/{0.project_id}/merge_requests/{0.iid}/commits'.format(self)))

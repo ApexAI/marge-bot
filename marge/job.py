@@ -1,5 +1,6 @@
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 import logging as log
+import copy
 import time
 from collections import namedtuple
 from datetime import datetime, timedelta
@@ -34,6 +35,7 @@ class MergeJob(object):
         raise NotImplementedError
 
     def ensure_mergeable_mr(self, merge_request):
+        # update MR info everytime, including approvals info
         merge_request.refetch_info()
         log.info('Ensuring MR !%s is mergeable', merge_request.iid)
         log.debug('Ensuring MR %r is mergeable', merge_request)
@@ -46,7 +48,7 @@ class MergeJob(object):
                 "Sorry, merging requests marked as auto-squash would ruin my commit tagging!"
             )
 
-        approvals = merge_request.fetch_approvals()
+        approvals = merge_request.approvals
         if not approvals.sufficient:
             raise CannotMerge(
                 'Insufficient approvals '
@@ -74,7 +76,7 @@ class MergeJob(object):
         reviewers = (
             _get_reviewer_names_and_emails(
                 merge_request.fetch_commits(),
-                merge_request.fetch_approvals(),
+                merge_request.approvals,
                 self._api,
             ) if self._options.add_reviewers else None
         )
@@ -186,12 +188,14 @@ class MergeJob(object):
         return self.opts.embargo.covers(now)
 
     def maybe_reapprove(self, merge_request, approvals):
+        original_approvals = copy.deepcopy(approvals)
         # Re-approve the merge request, in case us pushing it has removed approvals.
         if self.opts.reapprove:
             # approving is not idempotent, so we need to check first that there are no approvals,
             # otherwise we'll get a failure on trying to re-instate the previous approvals
             def sufficient_approvals():
-                return merge_request.fetch_approvals().sufficient
+                merge_request.refetch_info()
+                return merge_request.approvals.sufficient
             # Make sure we don't race by ensuring approvals have reset since the push
             time_0 = datetime.utcnow()
             waiting_time_in_secs = 5

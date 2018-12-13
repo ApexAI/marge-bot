@@ -14,11 +14,7 @@ class Approvals(gitlab.Resource):
         else:
             # GitLab botched the v4 api before 9.2.3
             approver_url = '/projects/{0.project_id}/merge_requests/{0.id}/approvals'.format(self)
-
-        if gitlab_version.is_ee:
-            self._info = self._api.call(GET(approver_url))
-        else:
-            self._info = dict(self._info, approvals_left=0, approved_by=[])
+        self._info = self._api.call(GET(approver_url))
 
     @property
     def iid(self):
@@ -41,8 +37,13 @@ class Approvals(gitlab.Resource):
         return [who['user']['username'] for who in self.info['approved_by']]
 
     @property
+    def all_approver_ids(self):
+        """Return the uids of all the approvers."""
+        return [who['user']['id'] for who in self.info['approvers']]
+
+    @property
     def approver_ids(self):
-        """Return the uids of the approvers."""
+        """Return the uids of the approvers that have approved."""
         return [who['user']['id'] for who in self.info['approved_by']]
 
     def reapprove(self):
