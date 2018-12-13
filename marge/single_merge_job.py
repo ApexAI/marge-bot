@@ -11,8 +11,7 @@ from .job import CannotMerge, MergeJob, SkipMerge
 class SingleMergeJob(MergeJob):
 
     def __init__(self, *, api, user, project, repo, options, merge_request):
-        super().__init__(api=api, user=user, project=project, repo=repo, options=options)
-        self._merge_request = merge_request
+        super().__init__(api=api, user=user, project=project, repo=repo, options=options, merge_request=merge_request)
 
     def execute(self):
         merge_request = self._merge_request
@@ -20,8 +19,7 @@ class SingleMergeJob(MergeJob):
         log.info('Processing !%s - %r', merge_request.iid, merge_request.title)
 
         try:
-            approvals = merge_request.fetch_approvals()
-            self.update_merge_request_and_accept(approvals)
+            self.update_merge_request_and_accept()
             log.info('Successfully merged !%s.', merge_request.info['iid'])
         except SkipMerge as err:
             log.warning("Skipping MR !%s: %s", merge_request.info['iid'], err.reason)
@@ -40,13 +38,13 @@ class SingleMergeJob(MergeJob):
             self.unassign_from_mr(merge_request)
             raise
 
-    def update_merge_request_and_accept(self, approvals):
+    def update_merge_request_and_accept(self):
         api = self._api
         merge_request = self._merge_request
         updated_into_up_to_date_target_branch = False
 
         while not updated_into_up_to_date_target_branch:
-            self.ensure_mergeable_mr(merge_request)
+            self.ensure_mergeable_mr()
             source_project, source_repo_url, _ = self.fetch_source_project(merge_request)
             # NB. this will be a no-op if there is nothing to update/rewrite
             target_sha, _updated_sha, actual_sha = self.update_from_target_branch_and_push(
@@ -63,13 +61,13 @@ class SingleMergeJob(MergeJob):
             if sha_now != actual_sha:
                 raise CannotMerge('Someone pushed to branch while we were trying to merge')
 
-            self.maybe_reapprove(merge_request, approvals)
+            self.maybe_reapprove()
 
             if source_project.only_allow_merge_if_pipeline_succeeds:
                 self.wait_for_ci_to_pass(merge_request, actual_sha)
                 time.sleep(2)
 
-            self.ensure_mergeable_mr(merge_request)
+            self.ensure_mergeable_mr()
 
             try:
                 source_branch = merge_request.source_branch.split("-")

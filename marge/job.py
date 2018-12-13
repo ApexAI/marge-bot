@@ -15,13 +15,14 @@ from .pipeline import Pipeline
 
 class MergeJob(object):
 
-    def __init__(self, *, api, user, project, repo, options):
+    def __init__(self, *, api, user, project, repo, options, merge_request):
         self._api = api
         self._user = user
         self._project = project
         self._repo = repo
         self._options = options
         self._merge_timeout = timedelta(minutes=5)
+        self._merge_request = merge_request
 
     @property
     def repo(self):
@@ -34,7 +35,8 @@ class MergeJob(object):
     def execute(self):
         raise NotImplementedError
 
-    def ensure_mergeable_mr(self, merge_request):
+    def ensure_mergeable_mr(self):
+        merge_request = self._merge_request
         # update MR info everytime, including approvals info
         merge_request.refetch_info()
         log.info('Ensuring MR !%s is mergeable', merge_request.iid)
@@ -68,8 +70,9 @@ class MergeJob(object):
         if self._user.id != merge_request.assignee_id:
             raise SkipMerge('It is not assigned to me anymore!')
 
-    def add_trailers(self, merge_request):
+    def add_trailers(self):
 
+        merge_request = self._merge_request
         log.info('Adding trailers for MR !%s', merge_request.iid)
 
         # add Reviewed-by
@@ -187,7 +190,9 @@ class MergeJob(object):
         now = datetime.utcnow()
         return self.opts.embargo.covers(now)
 
-    def maybe_reapprove(self, merge_request, approvals):
+    def maybe_reapprove(self):
+        merge_request = self._merge_request
+        approvals = self._merge_request.approvals
         original_approvals = copy.deepcopy(approvals)
         # Re-approve the merge request, in case us pushing it has removed approvals.
         if self.opts.reapprove:
@@ -271,7 +276,7 @@ class MergeJob(object):
             target_sha = repo.get_commit_hash('origin/' + target_branch)
             if updated_sha == target_sha:
                 raise CannotMerge('these changes already exist in branch `{}`'.format(target_branch))
-            rewritten_sha = self.add_trailers(merge_request) or updated_sha
+            rewritten_sha = self.add_trailers() or updated_sha
             branch_rewritten = rewritten_sha != updated_sha
             repo.push(source_branch, source_repo_url=source_repo_url, force=True)
             changes_pushed = True
