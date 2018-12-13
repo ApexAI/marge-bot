@@ -39,7 +39,7 @@ class Project(gitlab.Resource):
             permissions_ok = bool(permissions['project_access'] or permissions['group_access'])
             if not permissions_ok:
                 project_name = project_info['path_with_namespace']
-                log.warning('Ignoring project %s since GitLab provided no user permissions', project_name)
+                log.debug('Ignoring project %s since GitLab provided no user permissions', project_name)
 
             return permissions_ok
 
