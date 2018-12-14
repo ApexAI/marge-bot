@@ -63,9 +63,13 @@ class SingleMergeJob(MergeJob):
 
             self.maybe_reapprove()
 
-            if source_project.only_allow_merge_if_pipeline_succeeds:
-                self.wait_for_ci_to_pass(merge_request, actual_sha)
-                time.sleep(2)
+            # Don't wait for pipeline if no CI job exists
+            if not merge_request.pipeline:
+                log.warning("No pipeline found on MR {}. Are you sure about that?".format(merge_request.iid))
+            else:
+                if source_project.only_allow_merge_if_pipeline_succeeds:
+                    self.wait_for_ci_to_pass(merge_request, actual_sha)
+                    time.sleep(2)
 
             self.ensure_mergeable_mr()
 

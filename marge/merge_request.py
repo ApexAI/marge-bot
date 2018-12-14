@@ -109,6 +109,10 @@ class MergeRequest(gitlab.Resource):
         return self._approvals
 
     @property
+    def pipeline(self):
+        return self.info['pipeline']
+
+    @property
     def approved_by(self):
         return self.info['approved_by']
 
