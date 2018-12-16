@@ -68,8 +68,10 @@ class Api(object):
         return result
 
     def version(self):
-        response = self.call(GET('/version'))
-        return Version.parse(response['version'])
+        if not hasattr(self, '_version'): # Cache this variable to avoid unnecessary API call. 
+            response = self.call(GET('/version'))
+            self._version = Version.parse(response['version'])
+        return self._version
 
 
 def from_singleton_list(fun=None):
