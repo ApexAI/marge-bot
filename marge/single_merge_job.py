@@ -45,24 +45,10 @@ class SingleMergeJob(MergeJob):
 
         while not updated_into_up_to_date_target_branch:
             self.ensure_mergeable_mr()
-            source_project, source_repo_url, _ = self.fetch_source_project(merge_request)
-            # NB. this will be a no-op if there is nothing to update/rewrite
-            target_sha, _updated_sha, actual_sha = self.update_from_target_branch_and_push(
-                merge_request,
-                source_repo_url=source_repo_url,
-            )
-            log.info('Commit id to merge %r (into: %r)', actual_sha, target_sha)
-            time.sleep(5)
-
-            sha_now = Commit.last_on_branch(source_project.id, merge_request.source_branch, api).id
-            # Make sure no-one managed to race and push to the branch in the
-            # meantime, because we're about to impersonate the approvers, and
-            # we don't want to approve unreviewed commits
-            if sha_now != actual_sha:
-                raise CannotMerge('Someone pushed to branch while we were trying to merge')
-
-            self.maybe_reapprove()
-
+            source_project = self.get_source_project(merge_request)
+            self.rebase_mr()
+            actual_sha = merge_request.sha
+            target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
             # Don't wait for pipeline if no CI job exists
             if not merge_request.pipeline:
                 log.warning("No pipeline found on MR {}. Are you sure about that?".format(merge_request.iid))
@@ -70,6 +56,8 @@ class SingleMergeJob(MergeJob):
                 if source_project.only_allow_merge_if_pipeline_succeeds:
                     self.wait_for_ci_to_pass(merge_request, actual_sha)
                     time.sleep(2)
+                else:
+                    log.warning("Project allows merge without pipeline. Are you sure about that?")
 
             self.ensure_mergeable_mr()
 

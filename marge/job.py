@@ -308,6 +308,25 @@ class MergeJob(object):
                 repo.checkout_branch('master')
                 repo.remove_branch(source_branch)
 
+    def rebase_mr(self):
+        log.debug('Call rebase API. ')
+        merge_request = self._merge_request
+        log.debug("Old SHA is: %s", merge_request.sha)
+        rebase_result = merge_request.rebase()
+        if rebase_result == 202:  # rebase requested
+            time_0 = datetime.utcnow()
+            rebase_wait_time = 10
+            while datetime.utcnow() - time_0 < timedelta(seconds=rebase_wait_time):
+                merge_request.refetch_info()
+                if not merge_request.info["rebase_in_progress"]:
+                    break
+                log.debug('Rebase is in progress. Waiting %s seconds.', 5)
+                time.sleep(5)
+            if merge_request.info["merge_error"] is not None:
+                raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
+            log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
+        else:
+            raise CannotMerge("Failed when request rebase. Return code: {}".format(rebase_result))
 
 def _get_reviewer_names_and_emails(commits, approvals, api):
     """Return a list ['A. Prover <a.prover@example.com', ...]` for `merge_request.`"""

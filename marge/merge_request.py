@@ -121,7 +121,9 @@ class MergeRequest(gitlab.Resource):
         return self.info['web_url']
 
     def refetch_info(self):
-        self._info = self._api.call(GET('/projects/{0.project_id}/merge_requests/{0.iid}'.format(self)))
+        self._info = self._api.call(
+            GET('/projects/{0.project_id}/merge_requests/{0.iid}'.format(self),
+            dict(include_rebase_in_progress=True)))
         if not hasattr(self, '_approvals'):
             self._approvals = Approvals(self.api, {'id': self.id, 'iid': self.iid, 'project_id': self.project_id})
         self._approvals.refetch_info()
@@ -160,6 +162,11 @@ class MergeRequest(gitlab.Resource):
 
     def unassign(self):
         return self.assign_to(None)
+
+    def rebase(self):
+        return self._api.call(PUT(
+            '/projects/{0.project_id}/merge_requests/{0.iid}/rebase'.format(self)
+        ))
 
     def fetch_approvals(self):
         """This function should be deprecated."""
