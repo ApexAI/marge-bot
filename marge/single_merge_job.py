@@ -1,6 +1,7 @@
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 import logging as log
 import time
+import re
 from datetime import datetime
 
 from . import git, gitlab
@@ -68,6 +69,17 @@ class SingleMergeJob(MergeJob):
                     MR_title=merge_request.title)
                 merge_request.accept(remove_branch=True, sha=actual_sha, merge_message=merge_message)
                 merge_request.unassign()
+                # Close the issue if target branch is not master
+                if merge_request.target_branch is not "master":
+                    pattern = re.compile("^\d*$")
+                    issue_iid = source_branch[0]
+                    if pattern.match(issue_iid):
+                        gitlab.close_issue(self._api, source_project.id, issue_iid)
+                        log.info("Close related issue %s", issue_iid)
+                    else:
+                        merge_request.comment(
+                            "I cannot close the related issue to close. Source branch is {}. ".format(
+                                merge_request.source_branch))
             except gitlab.NotAcceptable as err:
                 new_target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
                 # target_branch has moved under us since we updated, just try again

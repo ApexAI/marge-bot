@@ -226,3 +226,9 @@ class Version(namedtuple('Version', 'release edition')):
     @property
     def is_ee(self):
         return 'ee' in self.edition
+
+def close_issue(api, project_id, issue_iid):
+    return api.call(PUT(
+        '/projects/{}/issues/{}'.format(project_id, issue_iid),
+        {'state_event': 'close'},
+    ))
