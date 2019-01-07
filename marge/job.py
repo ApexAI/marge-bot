@@ -311,6 +311,8 @@ class MergeJob(object):
     def rebase_mr(self):
         log.debug('Call rebase API. ')
         merge_request = self._merge_request
+        if "can_be_merged" != merge_request.info["merge_status"]:
+            raise CannotMerge("Rebase failed because of conflicts between source and target branch. ")
         log.debug("Old SHA is: %s", merge_request.sha)
         rebase_result = merge_request.rebase()
         if rebase_result == 202:  # rebase requested
@@ -322,8 +324,10 @@ class MergeJob(object):
                     break
                 log.debug('Rebase is in progress. Waiting %s seconds.', 5)
                 time.sleep(5)
-            if merge_request.info["merge_error"] is not None:
-                raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
+            # # We skip checking merge_error because we assume if an MR is `can_be_merged`, then 
+            # # rebase never fails. This is due to a bug in Gitlab. 
+            # if merge_request.info["merge_error"] is not None:
+            #     raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
         else:
             raise CannotMerge("Failed when request rebase. Return code: {}".format(rebase_result))
