@@ -47,9 +47,14 @@ class SingleMergeJob(MergeJob):
         while not updated_into_up_to_date_target_branch:
             self.ensure_mergeable_mr()
             source_project = self.get_source_project(merge_request)
-            self.rebase_mr()
             actual_sha = merge_request.sha
             target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
+            diff_version = merge_request.diff_versions[0]
+            # Rebase only when necessary
+            if diff_version["base_commit_sha"] != target_sha:
+                self.rebase_mr()
+            else:
+                log.info("Skip rebase because FF is possible. ")
             # Don't wait for pipeline if no CI job exists
             if not merge_request.pipeline:
                 log.warning("No pipeline found on MR {}. Are you sure about that?".format(merge_request.iid))
