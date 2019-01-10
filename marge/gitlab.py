@@ -19,7 +19,10 @@ class Api(object):
         log.debug('REQUEST: %s %s %r %r', method.__name__.upper(), url, headers, command.call_args)
         response = method(url, headers=headers, **command.call_args)
         log.debug('RESPONSE CODE: %s', response.status_code)
-        log.debug('RESPONSE BODY: %r', response.content)
+        if len(response.content) <= 4096:
+            log.debug('RESPONSE BODY: %r', response.content)
+        else:
+            log.debug('RESPONSE BODY(Truncated): %r ...', response.content[:4096])
 
         if response.status_code == 204:
             return True
