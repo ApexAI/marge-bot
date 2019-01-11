@@ -47,7 +47,6 @@ class SingleMergeJob(MergeJob):
         while not updated_into_up_to_date_target_branch:
             self.ensure_mergeable_mr()
             source_project = self.get_source_project(merge_request)
-            actual_sha = merge_request.sha
             target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
             diff_version = merge_request.diff_versions[0]
             # Rebase only when necessary
@@ -60,7 +59,7 @@ class SingleMergeJob(MergeJob):
                 log.warning("No pipeline found on MR {}. Are you sure about that?".format(merge_request.iid))
             else:
                 if source_project.only_allow_merge_if_pipeline_succeeds:
-                    self.wait_for_ci_to_pass(merge_request, actual_sha)
+                    self.wait_for_ci_to_pass(merge_request, merge_request.sha)
                     time.sleep(2)
                 else:
                     log.warning("Project allows merge without pipeline. Are you sure about that?")
@@ -72,7 +71,7 @@ class SingleMergeJob(MergeJob):
                 merge_message = "Merge [{issue_id}]: {MR_title}".format(
                     issue_id=source_branch[-1].upper(),
                     MR_title=merge_request.title)
-                merge_request.accept(remove_branch=True, sha=actual_sha, merge_message=merge_message)
+                merge_request.accept(remove_branch=True, sha=merge_request.sha, merge_message=merge_message)
                 merge_request.unassign()
                 # Close the issue if target branch is not master
                 if merge_request.target_branch is not "master":
