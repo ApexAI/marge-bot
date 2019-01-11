@@ -145,13 +145,14 @@ class MergeJob(object):
         if commit_sha is None:
             commit_sha = merge_request.sha
 
-        log.info('Waiting for CI to pass for MR !%s', merge_request.iid)
+        log.info('Waiting for CI to pass for MR !%s. Commit SHA: %s', merge_request.iid, commit_sha)
         while datetime.utcnow() - time_0 < self._options.ci_timeout:
             ci_status = self.get_mr_ci_status(merge_request, commit_sha=commit_sha)
             merge_request.refetch_info()
 
             if commit_sha != merge_request.sha:
-                raise CannotMerge('MR HEAD has moved. I cannot merge it anymore. Back to you. ')
+                raise CannotMerge('MR HEAD has moved. I cannot merge it anymore. Back to you.  \n Old SHA: {}. New SHA: {}.'
+                                  .format(commit_sha, merge_request.sha))
 
             if merge_request.work_in_progress:
                 raise CannotMerge('MR has gone back to WIP. I cannot merge it anymore. Back to you. ')
