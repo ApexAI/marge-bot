@@ -42,6 +42,11 @@ class MergeJob(object):
         log.info('Ensuring MR !%s is mergeable', merge_request.iid)
         log.debug('Ensuring MR %r is mergeable', merge_request)
 
+        # check source branch name
+        reobj = re.compile(r"^(\d{1,})\-\w{3}\1")
+        if not reobj.match(merge_request.source_branch):
+            raise CannotMerge("Branch name is not in correct format.")
+
         if merge_request.work_in_progress:
             raise CannotMerge("Sorry, I can't merge requests marked as Work-In-Progress!")
 
