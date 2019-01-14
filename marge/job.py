@@ -323,6 +323,7 @@ class MergeJob(object):
         log.debug("Old SHA is: %s", merge_request.sha)
         rebase_result = merge_request.rebase()
         if rebase_result == 202:  # rebase requested
+            time.sleep(3)
             time_0 = datetime.utcnow()
             rebase_wait_time = 10
             while datetime.utcnow() - time_0 < timedelta(seconds=rebase_wait_time):
