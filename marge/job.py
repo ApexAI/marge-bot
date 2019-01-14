@@ -2,6 +2,7 @@
 import logging as log
 import copy
 import time
+import re
 from collections import namedtuple
 from datetime import datetime, timedelta
 
@@ -330,8 +331,8 @@ class MergeJob(object):
                     break
                 log.debug('Rebase is in progress. Waiting %s seconds.', 5)
                 time.sleep(5)
-            # # We skip checking merge_error because we assume if an MR is `can_be_merged`, then 
-            # # rebase never fails. This is due to a bug in Gitlab. 
+            # # We skip checking merge_error because we assume if an MR is `can_be_merged`, then
+            # # rebase never fails. This is due to a bug in Gitlab.
             # if merge_request.info["merge_error"] is not None:
             #     raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
