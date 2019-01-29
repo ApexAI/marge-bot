@@ -1,4 +1,5 @@
 from . import gitlab
+import logging as log
 
 GET, POST, PUT = gitlab.GET, gitlab.POST, gitlab.PUT
 
