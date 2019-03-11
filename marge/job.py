@@ -43,6 +43,11 @@ class MergeJob(object):
         log.info('Ensuring MR !%s is mergeable', merge_request.iid)
         log.debug('Ensuring MR %r is mergeable', merge_request)
 
+        # check if construction emoji in MR title
+        if ":construction:" in merge_request.title:
+            raise CannotMerge("Could you give this MR a meaningful title? Remove emoji "
+                              ":construction: when it's good to go.")
+
         # check source branch name
         reobj = re.compile(r"^(\d{1,})\-\w{3}\1")
         if not reobj.match(merge_request.source_branch):
@@ -339,6 +344,7 @@ class MergeJob(object):
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
         else:
             raise CannotMerge("Failed when request rebase. Return code: {}".format(rebase_result))
+
 
 def _get_reviewer_names_and_emails(commits, approvals, api):
     """Return a list ['A. Prover <a.prover@example.com', ...]` for `merge_request.`"""
