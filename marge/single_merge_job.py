@@ -74,7 +74,7 @@ class SingleMergeJob(MergeJob):
                 merge_request.accept(remove_branch=True, sha=merge_request.sha, merge_message=merge_message)
                 merge_request.unassign()
                 # Close the issue if target branch is not master
-                if merge_request.target_branch == "master":
+                if merge_request.target_branch != "master":
                     pattern = re.compile("^\d*$")
                     issue_iid = source_branch[0]
                     if pattern.match(issue_iid):
