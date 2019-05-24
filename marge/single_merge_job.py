@@ -69,7 +69,7 @@ class SingleMergeJob(MergeJob):
             try:
                 source_branch = merge_request.source_branch.split("-")
                 merge_message = "[{issue_id}] {MR_title}".format(
-                    issue_id=source_branch[1].upper(),
+                    issue_id=source_branch[0],
                     MR_title=merge_request.title)
                 merge_request.accept(remove_branch=True, sha=merge_request.sha, merge_message=merge_message)
                 merge_request.unassign()

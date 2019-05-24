@@ -48,10 +48,11 @@ class MergeJob(object):
             raise CannotMerge("Could you give this MR a meaningful title? Remove emoji "
                               ":construction: when it's good to go.")
 
-        # check source branch name
-        reobj = re.compile(r"^(\d{1,})\-\w{3}\1")
-        if not reobj.match(merge_request.source_branch):
-            raise CannotMerge("Branch name is not in correct format.")
+        # check if source branch name is valid
+        if not re.match("^\d+\-.+", merge_request.source_branch):
+            raise CannotMerge("Invalid source branch name. It should be like 1234-fix-the-bug. "
+                              "Regex: `^\d+\-.+`.")
+
 
         if merge_request.work_in_progress:
             raise CannotMerge("Sorry, I can't merge requests marked as Work-In-Progress!")
