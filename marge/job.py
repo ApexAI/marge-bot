@@ -1,6 +1,7 @@
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 import logging as log
 import copy
+import json
 import time
 import re
 from collections import namedtuple
@@ -328,7 +329,8 @@ class MergeJob(object):
             raise CannotMerge("Rebase failed because of conflicts between source and target branch. ")
         log.debug("Old SHA is: %s", merge_request.sha)
         rebase_result = merge_request.rebase()
-        if rebase_result == 202:  # rebase requested
+
+        if rebase_result["rebase_in_progress"] == True:  # rebase requested
             time.sleep(3)
             time_0 = datetime.utcnow()
             rebase_wait_time = 10
@@ -344,7 +346,7 @@ class MergeJob(object):
             #     raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
         else:
-            raise CannotMerge("Failed when request rebase. Return code: {}".format(rebase_result))
+            raise CannotMerge("Failed when request rebase. Response: {}".format(rebase_result_raw))
 
 
 def _get_reviewer_names_and_emails(commits, approvals, api):
