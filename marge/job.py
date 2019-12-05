@@ -44,16 +44,18 @@ class MergeJob(object):
         log.info('Ensuring MR !%s is mergeable', merge_request.iid)
         log.debug('Ensuring MR %r is mergeable', merge_request)
 
-        # check if construction emoji in MR title
-        if ":construction:" in merge_request.title:
-            raise CannotMerge("Could you give this MR a meaningful title? Remove emoji "
-                              ":construction: when it's good to go.")
-
         # check if source branch name is valid
         if not re.match("^\d+\-.+", merge_request.source_branch):
             raise CannotMerge("Invalid source branch name. It should be like 1234-fix-the-bug. "
                               "Regex: `^\d+\-.+`.")
 
+        # check if there's unresolved discussion
+        if not merge_request.blocking_discussions_resolved:
+            raise CannotMerge("There are still opening discussions. Please resolve them first.")
+
+        # check if there's conflicts
+        if merge_request.has_conflicts:
+            raise CannotMerge("Sorry, I can't merge this due to conflicts")
 
         if merge_request.work_in_progress:
             raise CannotMerge("Sorry, I can't merge requests marked as Work-In-Progress!")

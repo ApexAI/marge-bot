@@ -123,6 +123,14 @@ class MergeRequest(gitlab.Resource):
         return self.info['approved_by']
 
     @property
+    def blocking_discussions_resolved(self):
+        return self.info['blocking_discussions_resolved']
+
+    @property
+    def has_conflicts(self):
+        return self.info['has_conflicts']
+
+    @property
     def web_url(self):
         return self.info['web_url']
 
