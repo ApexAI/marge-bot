@@ -75,15 +75,15 @@ class SingleMergeJob(MergeJob):
                 merge_request.unassign()
                 # Close the issue if target branch is not master
                 if merge_request.target_branch != "master":
-                    pattern = re.compile("^\d*$")
-                    issue_iid = source_branch[0]
-                    if pattern.match(issue_iid):
-                        gitlab.close_issue(self._api, source_project.id, issue_iid)
-                        log.info("Close related issue %s", issue_iid)
+                    issue_ids = re.findall(r'[C|c]loses?\s#(\d*)', merge_request.description)
+                    if issue_ids:
+                        for issue in set(issue_ids):
+                            gitlab.close_issue(self._api, source_project.id, issue)
+                            log.info("Close related issue %s", issue)
+                        merge_request.comment("Closing #" + ", #".join(issue_ids) + ".")
                     else:
                         merge_request.comment(
-                            "I cannot close the related issue to close. Source branch is {}. ".format(
-                                merge_request.source_branch))
+                            "No `Close #` command is found in MR description.")
             except gitlab.NotAcceptable as err:
                 new_target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
                 # target_branch has moved under us since we updated, just try again

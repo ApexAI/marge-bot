@@ -60,6 +60,10 @@ class MergeRequest(gitlab.Resource):
         return self.info['title']
 
     @property
+    def description(self):
+        return self.info['description']
+
+    @property
     def state(self):
         return self.info['state']
 
