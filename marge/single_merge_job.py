@@ -73,17 +73,6 @@ class SingleMergeJob(MergeJob):
                     MR_title=merge_request.title)
                 merge_request.accept(remove_branch=True, sha=merge_request.sha, merge_message=merge_message)
                 merge_request.unassign()
-                # Close the issue if target branch is not master
-                if merge_request.target_branch != "master":
-                    issue_ids = re.findall(r'[C|c]loses?\s#(\d*)', merge_request.description)
-                    if issue_ids:
-                        for issue in set(issue_ids):
-                            gitlab.close_issue(self._api, source_project.id, issue)
-                            log.info("Close related issue %s", issue)
-                        merge_request.comment("Closing #" + ", #".join(issue_ids) + ".")
-                    else:
-                        merge_request.comment(
-                            "No `Close #` command is found in MR description.")
             except gitlab.NotAcceptable as err:
                 new_target_sha = Commit.last_on_branch(self._project.id, merge_request.target_branch, api).id
                 # target_branch has moved under us since we updated, just try again
@@ -154,6 +143,18 @@ class SingleMergeJob(MergeJob):
             merge_request.refetch_info()
 
             if merge_request.state == 'merged':
+                # Close the issue if target branch is not master
+                if merge_request.target_branch != "master":
+                    source_project = self.get_source_project(merge_request)
+                    issue_ids = re.findall(r'[C|c]loses?\s#(\d*)', merge_request.description)
+                    if issue_ids:
+                        for issue in set(issue_ids):
+                            gitlab.close_issue(self._api, source_project.id, issue)
+                            log.info("Close related issue %s", issue)
+                        merge_request.comment("Closing #" + ", #".join(issue_ids) + ".")
+                    else:
+                        merge_request.comment(
+                            "No `Close #` command is found in MR description.")
                 return  # success!
             if merge_request.state == 'closed':
                 raise CannotMerge('someone closed the merge request while merging!')
