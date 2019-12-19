@@ -56,7 +56,8 @@ class SingleMergeJob(MergeJob):
                 log.info("Skip rebase because FF is possible. ")
             # Don't wait for pipeline if no CI job exists
             if not merge_request.pipeline:
-                log.warning("No pipeline found on MR {}. Are you sure about that?".format(merge_request.iid))
+                merge_request.comment("No pipeline is found on MR {} via API."
+                                      "Are you sure about that?".format(merge_request.iid))
             else:
                 if source_project.only_allow_merge_if_pipeline_succeeds:
                     self.wait_for_ci_to_pass(merge_request, merge_request.sha)
@@ -154,7 +155,7 @@ class SingleMergeJob(MergeJob):
                         merge_request.comment("Closing #" + ", #".join(issue_ids) + ".")
                     else:
                         merge_request.comment(
-                            "No `Close #` command is found in MR description.")
+                            "This MR is **merged** but no `Close #` command is found in MR description.")
                 return  # success!
             if merge_request.state == 'closed':
                 raise CannotMerge('someone closed the merge request while merging!')
