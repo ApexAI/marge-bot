@@ -164,4 +164,5 @@ class SingleMergeJob(MergeJob):
             log.info('Giving %s more secs for !%s to be merged...', waiting_time_in_secs, merge_request.iid)
             time.sleep(waiting_time_in_secs)
 
-        raise CannotMerge('It is taking too long to see the request marked as merged!')
+        raise CannotMerge('Gitlab internal error. It is taking too long to see the request marked as merged! '
+                          'The status of MR is still `{}`'.format(merge_request.state))
