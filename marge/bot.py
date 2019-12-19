@@ -1,6 +1,7 @@
 import logging as log
 import time
 from collections import namedtuple
+from functools import cmp_to_key
 from tempfile import TemporaryDirectory
 
 from . import batch_job
@@ -158,9 +159,13 @@ class Bot(object):
             except git.GitError as err:
                 log.exception('BatchMergeJob failed: %s', err)
         log.info('Attempting to merge the oldest MR...')
-        # check if label `merge_first` exists, otherwise pick the oldest MR
-        merge_first = [MR for MR in merge_requests if "merge_first" in MR.labels]
-        merge_request = merge_requests[0] if not merge_first else merge_first[0]
+        # Sort the MR by their priority
+        def compare_priority(mr1, mr2):
+            if mr1.priority == 0 and mr2.priority == 0:
+                return 0
+            return -1 if mr1.priority < mr2.priority else 1
+        merge_requests = sorted(merge_requests, key=cmp_to_key(compare_priority), reverse=True)
+        merge_request = merge_requests[0]
         merge_job = self._get_single_job(
             project=project, merge_request=merge_request, repo=repo,
             options=self._config.merge_opts,

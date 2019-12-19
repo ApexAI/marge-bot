@@ -1,5 +1,7 @@
 from . import gitlab
+from functools import lru_cache
 import logging as log
+import re
 from .approvals import Approvals
 
 
@@ -71,6 +73,16 @@ class MergeRequest(gitlab.Resource):
     @property
     def labels(self):
         return self.info['labels']
+
+    @property
+    @lru_cache(maxsize=32) # must be bigger than MR number per page
+    def priority(self):
+        pattern = re.compile(r"priority::(\d*)")
+        priority_label = [label for label in self.labels if pattern.match(label)]
+        if not priority_label:
+            return 0
+        else:
+            return int(pattern.match(priority_label[0]).group(1))
 
     @property
     def assignee_id(self):
