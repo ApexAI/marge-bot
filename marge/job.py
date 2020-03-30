@@ -347,6 +347,7 @@ class MergeJob(object):
             # if merge_request.info["merge_error"] is not None:
             #     raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
+            time.sleep(5)
         else:
             raise CannotMerge("Failed when request rebase. Response: {}".format(rebase_result_raw))
 
