@@ -34,7 +34,7 @@ def _parse_config(args):
 
     def regexp(str_regex):
         try:
-            return re.compile(str_regex)
+            return re.compile(str_regex) if str_regex != "None" else None
         except re.error as err:
             raise configargparse.ArgumentTypeError('Invalid regexp: %r (%s)' % (str_regex, err.msg))
 
@@ -189,6 +189,12 @@ def _parse_config(args):
         help='Only process MRs whose target branches match the given regular expression.\n',
     )
     parser.add_argument(
+        '--branch-negative-regexp',
+        type=regexp,
+        default='.*',
+        help='Negative regular expression to match target branches. Cannot be both empty.\n',
+    )
+    parser.add_argument(
         '--debug',
         action='store_true',
         help='Debug logging (includes all HTTP requests etc).\n',
@@ -250,6 +256,10 @@ def main(args=None):
         if options.batch:
             logging.warning('Experimental batch mode enabled')
 
+        if options.branch_regexp is None and options.branch_negative_regexp is None:
+            logging.error('branch_regexp and branch_negative_regexp can not be '
+                          'both None.')
+            exit(1)
         config = bot.BotConfig(
             user=user,
             ssh_key_file=ssh_key_file,
@@ -257,6 +267,7 @@ def main(args=None):
             git_timeout=options.git_timeout,
             git_reference_repo=options.git_reference_repo,
             branch_regexp=options.branch_regexp,
+            branch_negative_regexp=options.branch_negative_regexp,
             merge_order=options.merge_order,
             merge_opts=bot.MergeJobOptions.default(
                 add_tested=options.add_tested,
