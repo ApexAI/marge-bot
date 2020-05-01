@@ -130,6 +130,10 @@ class MergeRequest(gitlab.Resource):
         return self.info['pipeline']
 
     @property
+    def head_pipeline(self):
+        return self.info['head_pipeline']
+
+    @property
     def diff_versions(self):
         return self._api.call(GET(
             '/projects/{0.project_id}/merge_requests/{0.iid}/versions'.format(self)
