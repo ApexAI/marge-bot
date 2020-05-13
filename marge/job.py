@@ -325,25 +325,33 @@ class MergeJob(object):
         merge_request = self._merge_request
         if "can_be_merged" != merge_request.info["merge_status"]:
             raise CannotMerge("Rebase failed because of conflicts between source and target branch. ")
-        log.debug("Old SHA is: %s", merge_request.sha)
+        old_sha = merge_request.sha
         rebase_result = merge_request.rebase()
+        log.debug(f"Rebase started. Old sha is {old_sha}")
+        time.sleep(5)
 
         if rebase_result["rebase_in_progress"] == True:  # rebase requested
-            time.sleep(3)
             time_0 = datetime.utcnow()
-            rebase_wait_time = 10
+            rebase_wait_time = 60
             while datetime.utcnow() - time_0 < timedelta(seconds=rebase_wait_time):
                 merge_request.refetch_info()
-                if not merge_request.info["rebase_in_progress"]:
+                if old_sha == merge_request.sha:
+                    log.debug('Rebase is in progress. Waiting %s seconds.', 5)
+                    sleep(5)
+                else:
+                    log.debug('Rebase has finished.')
                     break
-                log.debug('Rebase is in progress. Waiting %s seconds.', 5)
-                time.sleep(5)
+
+            # Rebase isn't done properly
+            if old_sha == merge_request.sha:
+                log.error(f"Rebase didn't finish within 60s. The old and new sha is {old_sha}.")
+                raise CannotMerge(f"Rebase didn't finish within 60s. The old and new sha is {old_sha}.")
+
             # # We skip checking merge_error because we assume if an MR is `can_be_merged`, then
             # # rebase never fails. This is due to a bug in Gitlab.
             # if merge_request.info["merge_error"] is not None:
             #     raise CannotMerge("Failed when rebase. Reason: {}".format(merge_request.info["merge_error"]))
             log.debug("Successfully rebase branch via API. New SHA is: %s", merge_request.sha)
-            time.sleep(5)
         else:
             raise CannotMerge("Failed when request rebase. Response: {}".format(rebase_result_raw))
 
