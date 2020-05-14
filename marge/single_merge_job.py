@@ -52,8 +52,8 @@ class SingleMergeJob(MergeJob):
             # Rebase only when necessary
             if diff_version["base_commit_sha"] != target_sha:
                 self.rebase_mr()
-                time.sleep(10)
                 log.debug("Sleep 10 seconds after rebasing to wait for the new pipeline")
+                time.sleep(10)
             else:
                 log.info("Skip rebase because FF is possible. ")
 

@@ -337,7 +337,7 @@ class MergeJob(object):
                 merge_request.refetch_info()
                 if old_sha == merge_request.sha:
                     log.debug('Rebase is in progress. Waiting %s seconds.', 5)
-                    sleep(5)
+                    time.sleep(5)
                 else:
                     log.debug('Rebase has finished.')
                     break
