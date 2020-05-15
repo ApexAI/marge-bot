@@ -158,8 +158,8 @@ class MergeJob(object):
 
         log.info('Waiting for CI to pass for MR !%s. Commit SHA: %s', merge_request.iid, commit_sha)
         while datetime.utcnow() - time_0 < self._options.ci_timeout:
-            ci_status = self.get_mr_ci_status(merge_request, commit_sha=commit_sha)
             merge_request.refetch_info()
+            ci_status = self.get_mr_ci_status(merge_request, commit_sha=commit_sha)
 
             if commit_sha != merge_request.sha:
                 raise CannotMerge('MR HEAD has moved. I cannot merge it anymore. Back to you.  \n Old SHA: {}. New SHA: {}.'
