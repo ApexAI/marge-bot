@@ -323,7 +323,7 @@ class MergeJob(object):
     def rebase_mr(self):
         log.debug('Call rebase API. ')
         merge_request = self._merge_request
-        if "can_be_merged" != merge_request.info["merge_status"]:
+        if "cannot_be_merged" == merge_request.info["merge_status"]:
             raise CannotMerge("Rebase failed because of conflicts between source and target branch. ")
         old_sha = merge_request.sha
         rebase_result = merge_request.rebase()

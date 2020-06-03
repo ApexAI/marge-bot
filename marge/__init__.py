@@ -2,7 +2,7 @@ import logging as log
 import coloredlogs
 
 log.basicConfig(
-    level=log.INFO,
+    level=log.DEBUG,
     format='%(asctime)s %(levelname)s %(message)s',
 )
-coloredlogs.install(level='INFO')
+coloredlogs.install(level='DEBUG')

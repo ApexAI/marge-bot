@@ -32,7 +32,7 @@ class MergeRequest(gitlab.Resource):
 
     @classmethod
     def fetch_by_iid(cls, project_id, merge_request_iid, api):
-        merge_request = cls(api, {'iid': merge_request_iid, 'project_id': project_id})
+        merge_request = cls(api, {'iid': merge_request_iid, 'project_id': project_id, 'with_merge_status_recheck': True})
         merge_request.refetch_info()
         return merge_request
 
@@ -44,7 +44,8 @@ class MergeRequest(gitlab.Resource):
                 'state': 'opened',
                 'order_by': merge_order,
                 'sort': 'asc',
-                'assignee_id': user_id
+                'assignee_id': user_id,
+                'with_merge_status_recheck': True
             },
         ))
 
