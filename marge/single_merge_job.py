@@ -1,5 +1,6 @@
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 import logging as log
+import json
 import time
 import re
 from datetime import datetime
@@ -125,11 +126,16 @@ class SingleMergeJob(MergeJob):
                     log.info('Merge request is already merged, someone was faster!')
                     updated_into_up_to_date_target_branch = True
                 else:
+                    log_file = f("/tmp/marge-bot-error/{}.json".format(time.time()))
+                    with open(log_file, "w") as f:
+                        json.dump(merge_request.info)
+
                     raise CannotMerge(
                         "Gitlab refused to merge this request and I don't know why!" + (
                             " Maybe you have unresolved discussions?"
                             if self._project.only_allow_merge_if_all_discussions_are_resolved else ""
-                        )
+                        ) + "\n"
+                        + f"Check {log_file} for the API response."
                     )
             except gitlab.ApiError:
                 log.exception('Unanticipated ApiError from GitLab on merge attempt')
